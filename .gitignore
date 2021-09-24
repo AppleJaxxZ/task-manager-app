@@ -1,5 +1,3 @@
 node_modules
-crudOperations.js
-promises.js
-callbacks.js
 mongodb.js
+testing
