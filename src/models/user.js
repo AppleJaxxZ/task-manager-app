@@ -53,6 +53,13 @@ const userSchema = new mongoose.Schema({
   ],
 });
 
+// A virtual is not stored in the database, it's for mongoose to figure out who owns what and how they are related.
+userSchema.virtual("tasks", {
+  ref: "Task",
+  localField: "_id",
+  foreignField: "owner",
+});
+
 //behind the scene this works because res.send is calling stringify on our data.  so this method attatches
 //to that response call and hides the password and tokens from our users endpoint
 userSchema.methods.toJSON = function () {
