@@ -53,6 +53,18 @@ const userSchema = new mongoose.Schema({
   ],
 });
 
+//behind the scene this works because res.send is calling stringify on our data.  so this method attatches
+//to that response call and hides the password and tokens from our users endpoint
+userSchema.methods.toJSON = function () {
+  const user = this;
+  const userObject = user.toObject();
+
+  delete userObject.password;
+  delete userObject.tokens;
+
+  return userObject;
+};
+
 userSchema.methods.generateAuthToken = async function () {
   const user = this;
   const token = jwt.sign({ _id: user._id.toString() }, "thisismynewapp");
