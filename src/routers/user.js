@@ -4,8 +4,9 @@ const User = require("../models/user");
 const router = new express.Router();
 const auth = require("../middleware/auth");
 const multer = require("multer");
+const sharp = require("sharp");
 
-//USERS ENDPOINTS
+//Creates a new User and Verifies User
 router.post("/users", async (req, res) => {
   const user = new User(req.body);
   try {
@@ -17,6 +18,7 @@ router.post("/users", async (req, res) => {
   }
 });
 
+//Login With User
 router.post("/users/login", async (req, res) => {
   try {
     const user = await User.findByCredentials(
@@ -31,6 +33,7 @@ router.post("/users/login", async (req, res) => {
   }
 });
 
+//Logout Of Current User Session
 router.post("/users/logout", auth, async (req, res) => {
   try {
     req.user.tokens = req.user.tokens.filter((token) => {
@@ -43,6 +46,7 @@ router.post("/users/logout", auth, async (req, res) => {
   }
 });
 
+//Logs Out User from all Sessions tokens.
 router.post("/users/logoutAll", auth, async (req, res) => {
   try {
     req.user.tokens = [];
@@ -53,10 +57,12 @@ router.post("/users/logoutAll", auth, async (req, res) => {
   }
 });
 
+//Get Users
 router.get("/users/me", auth, async (req, res) => {
   res.send(req.user);
 });
 
+//Updates User Info
 router.patch("/users/me", auth, async (req, res) => {
   const updates = Object.keys(req.body);
   const allowedUpdates = ["name", "email", "password", "age"];
@@ -81,7 +87,7 @@ router.patch("/users/me", auth, async (req, res) => {
     res.status(400).send(e);
   }
 });
-
+//Deletes User
 router.delete("/users/me", auth, async (req, res) => {
   try {
     await req.user.remove();
@@ -91,6 +97,7 @@ router.delete("/users/me", auth, async (req, res) => {
   }
 });
 
+//Using Multer package for setting image/files upload specifications.
 const upload = multer({
   limits: {
     fileSize: 1000000,
@@ -102,12 +109,18 @@ const upload = multer({
     cb(undefined, true);
   },
 });
+
+//Adds User Avatar
 router.post(
   "/users/me/avatar",
   auth,
   upload.single("avatar"),
   async (req, res) => {
-    req.user.avatar = req.file.buffer; //only accessbile if dest isnt being used.
+    const buffer = await sharp(req.file.buffer)
+      .resize({ width: 250, height: 250 })
+      .png()
+      .toBuffer();
+    req.user.avatar = buffer; //only accessbile if dest isnt being used.
     await req.user.save();
     res.send();
   },
@@ -115,10 +128,25 @@ router.post(
     res.status(400).send({ error: error.message });
   }
 );
-
+//Deletes Users Avatar
 router.delete("/users/me/avatar", auth, async (req, res) => {
   req.user.avatar = undefined;
   await req.user.save();
   res.send();
 });
+
+router.get("/users/:id/avatar", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+
+    if (!user || !user.avatar) {
+      throw new Error();
+    }
+    res.set("Content-type", "image/png");
+    res.send(user.avatar);
+  } catch (e) {
+    res.status(404).send();
+  }
+});
+
 module.exports = router;
