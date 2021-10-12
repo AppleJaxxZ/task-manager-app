@@ -1,5 +1,6 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
+require("dotenv").config();
 
 const auth = async (req, res, next) => {
   try {
@@ -7,7 +8,7 @@ const auth = async (req, res, next) => {
     const token = req.header("Authorization").replace("Bearer ", "");
 
     //decodes and verifies the user token against the servers token.
-    const decoded = jwt.verify(token, "thisismynewapp");
+    const decoded = jwt.verify(token, process.env.JWT_TOKEN);
     //finds the user with the user token still stored.
 
     const user = await User.findOne({
